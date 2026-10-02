@@ -224,6 +224,14 @@ fun SessionsScreen(
             displayedSessions(state)
         }
 
+    val workspaceGroups = remember(sessionsToDisplay, state.projects, state.section) {
+        if (state.section == HistorySection.CONVERSATIONS) {
+            groupSessionsByWorkspace(sessionsToDisplay, state.projects) { it.session }
+        } else {
+            emptyList()
+        }
+    }
+
     val pinnedItems =
         remember(
             state.isSearchMode,
@@ -543,6 +551,16 @@ fun SessionsScreen(
                         )
                     }
                 }
+            }
+
+            // Shown only when the server supplied a named folder that actually owns a loaded row.
+            if (workspaceGroups.any { it.project != null }) {
+                FilterChip(
+                    selected = state.groupByWorkspace,
+                    onClick = viewModel::toggleWorkspaceGrouping,
+                    label = { Text(stringResource(R.string.sessions_group_workspaces)) },
+                    modifier = Modifier.padding(horizontal = spacing.md).testTag("history_group_workspaces"),
+                )
             }
 
             // ── Search + bulk toggle (always visible) ─────────────
@@ -950,8 +968,29 @@ fun SessionsScreen(
                                             )
                                         }
                                     }
-                                    items(sessionsToDisplay, key = { it.session.id }) { item ->
-                                        sessionCard(item)
+                                    if (state.groupByWorkspace && workspaceGroups.any { it.project != null }) {
+                                        workspaceGroups.forEach { group ->
+                                            item(key = "workspace_header_${group.project?.let { "project_${it.id}" } ?: "unassigned"}") {
+                                                Text(
+                                                    text = group.project?.name?.takeIf { it.isNotBlank() }
+                                                        ?: stringResource(
+                                                            if (group.project == null) R.string.sessions_other_workspaces
+                                                            else R.string.sessions_unnamed_workspace,
+                                                        ),
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(vertical = spacing.xs),
+                                                )
+                                            }
+                                            items(group.items, key = { it.session.id }) { item ->
+                                                sessionCard(item)
+                                            }
+                                        }
+                                    } else {
+                                        items(sessionsToDisplay, key = { it.session.id }) { item ->
+                                            sessionCard(item)
+                                        }
                                     }
                                 }
 

@@ -30,12 +30,7 @@ fun resolveSessionProject(
     val repoRoot = recordedRoot.ifEmpty { cwd }
     if (cwd.isEmpty() && repoRoot.isEmpty()) return null
 
-    val owner =
-        projects
-            .filterNot { it.isArchived }
-            .flatMap { project -> project.folders.map { project to it.path } }
-            .filter { (_, folder) -> isPathUnder(folder, cwd) || isPathUnder(folder, repoRoot) }
-            .maxByOrNull { (_, folder) -> pathSegments(folder).size }
+    val owner = namedProjectFolder(session, projects)
 
     if (owner != null) {
         val (project, folder) = owner
@@ -49,6 +44,23 @@ fun resolveSessionProject(
             .firstNotNullOfOrNull { path -> path?.let(::pathLeaf)?.takeIf(String::isNotEmpty) }
             ?: return null
     return SessionProject(label = label)
+}
+
+/** Only an explicit folder from the gateway's projects.list can claim a grouping row. */
+fun namedProjectForSession(session: SessionInfo, projects: List<ProjectInfo>): ProjectInfo? =
+    namedProjectFolder(session, projects)?.first
+
+private fun namedProjectFolder(session: SessionInfo, projects: List<ProjectInfo>): Pair<ProjectInfo, String>? {
+    val cwd = session.cwd?.trim().orEmpty()
+    val repoRoot = session.git_repo_root?.trim().orEmpty()
+    return projects
+        .filterNot { it.isArchived }
+        .flatMap { project -> project.folders.map { project to it.path } }
+        .filter { (_, folder) ->
+            folder.isNotBlank() &&
+                ((cwd.isNotEmpty() && isPathUnder(folder, cwd)) ||
+                    (repoRoot.isNotEmpty() && isPathUnder(folder, repoRoot)))
+        }.maxByOrNull { (_, folder) -> pathSegments(folder).size }
 }
 
 /** Path segments, ignoring mixed separators, repeated separators and trailing slashes. */
@@ -78,6 +90,8 @@ private fun isPathUnder(
     val folderSegments = comparisonSegments(folder)
     val targetSegments = comparisonSegments(target)
     if (folderSegments.isEmpty() || folderSegments.size > targetSegments.size) return false
+    if (isWindowsPath(folder) != isWindowsPath(target)) return false
+    if (!isWindowsPath(folder) && folder.trim().startsWith('/') != target.trim().startsWith('/')) return false
     return folderSegments.indices.all { folderSegments[it] == targetSegments[it] }
 }
 
