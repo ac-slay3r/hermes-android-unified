@@ -112,6 +112,7 @@ data class SessionsUiState(
     val showHidden: Boolean = false,
     val sourceFilter: String? = null,
     val pinnedExpanded: Boolean = true,
+    val groupByWorkspace: Boolean = true,
     val liveStatuses: Map<String, SessionLiveStatus> = emptyMap(),
     // Named projects used to label each row with the workspace it belongs to.
     val projects: List<ProjectInfo> = emptyList(),
@@ -300,6 +301,10 @@ class SessionsViewModel(
 
     fun togglePinnedExpanded() {
         _uiState.update { it.copy(pinnedExpanded = !it.pinnedExpanded) }
+    }
+
+    fun toggleWorkspaceGrouping() {
+        _uiState.update { it.copy(groupByWorkspace = !it.groupByWorkspace) }
     }
 
     private fun stitchMissingParents(requestGeneration: Long) =
