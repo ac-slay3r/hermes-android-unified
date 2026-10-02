@@ -30,6 +30,8 @@
 
 ## Overview
 
+> **Fork note:** This fork contains the original native client and an [evidence-backed comparison and integration roadmap](docs/ANDROID_CLIENT_SYNTHESIS.md) of open-source Android Hermes Agent apps. It has **not** merged those apps' code or implemented every proposed feature. Releases, screenshots, F-Droid links and upstream support links below refer to [Hy4ri/hermes-mobile](https://github.com/Hy4ri/hermes-mobile), not a release of this fork.
+
 **Hermes Mobile** is a native Android app for controlling your [Hermes Agent](https://hermes-agent.nousresearch.com) from your phone. Chat with your agent, manage cron jobs, skills, models and more.
 
 It connects to the Hermes dashboard (REST API and WebSocket gateway), so you need a running dashboard that your phone can reach.
